@@ -206,4 +206,20 @@ public class MediaTrackerApp {
             System.out.println("Report error: " + e.getMessage());
         }
     }
+
+    private static void viewWeeklyReport() {
+        LocalDate today = LocalDate.now();
+        LocalDate startOfWeek = today.minusDays(6);
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement("SELECT SUM(duration_minutes) FROM media WHERE watched_date BETWEEN ? AND ?")) {
+            pstmt.setString(1, startOfWeek.toString());
+            pstmt.setString(2, today.toString());
+            ResultSet rs = pstmt.executeQuery();
+            int total = rs.getInt(1);
+            System.out.printf("Total watched from %s to %s: %d hour(s) %d minute(s)%n", startOfWeek, today, total / 60, total % 60);
+        } catch (SQLException e) {
+            System.out.println("Weekly report error: " + e.getMessage());
+        }
+    }
 }
