@@ -57,22 +57,23 @@ public class MediaTrackerApp {
     }
 
     private static void createDatabase() {
-
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement()) {
 
-            String sql = "CREATE TABLE IF NOT EXISTS media (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "title TEXT NOT NULL," +
-                    "type TEXT NOT NULL," +
-                    "genre TEXT," +
-                    "duration_minutes INTEGER," +
-                    "watched_date DATE" +
-                    ");";
-            stmt.execute(sql);
+            String sql = """
+            CREATE TABLE IF NOT EXISTS media (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                genre TEXT,
+                runtime INTEGER,
+                type TEXT,
+                date_watched TEXT
+            )
+        """;
 
+            stmt.execute(sql);
         } catch (SQLException e) {
-            System.out.print("Database error: " + e.getMessage());
+            System.out.println(ANSI_RED + "Database creation failed: " + e.getMessage() + ANSI_RESET);
         }
     }
 
