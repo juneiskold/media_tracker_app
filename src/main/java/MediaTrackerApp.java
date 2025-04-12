@@ -104,4 +104,50 @@ public class MediaTrackerApp {
             System.out.println("Insert error: " + e.getMessage());
         }
     }
+
+    private static Map<String, Object> fetchMediaMetadata(String title, String type) {
+        try {
+            String encodedTitle = title.replace(" ", "%20");
+            String url = "https://api.themoviedb.org/3/search/" + (type.equals("tv") ? "tv" : "movie") +
+                    "?api_key=" + TMDB_API_KEY + "&query=" + encodedTitle;
+
+            Request request = new Request.Builder().url(url).build();
+            Response response = client.newCall(request).execute();
+
+            if (!response.isSuccessful()) return null;
+
+            JSONObject json = new JSONObject(response.body().string());
+            JSONArray results = json.getJSONArray("results");
+
+            if (results.length() == 0) return null;
+
+            JSONObject media = results.getJSONObject(0);
+            int id = media.getInt("id");
+
+            String detailsUrl = "https://api.themoviedb.org/3/" + (type.equals("tv") ? "tv" : "movie") +
+                    "/" + id + "?api_key=" + TMDB_API_KEY;
+            Request detailsRequest = new Request.Builder().url(detailsUrl).build();
+            Response detailsResponse = client.newCall(detailsRequest).execute();
+
+            if (!detailsResponse.isSuccessful()) return null;
+
+            JSONObject details = new JSONObject(detailsResponse.body().string());
+            JSONArray genresArray = details.getJSONArray("genres");
+            String genre = genresArray.length() > 0 ? genresArray.getJSONObject(0).getString("name") : "Unknown";
+
+            int duration = type.equals("tv") ? details.optInt("episode_run_time", 30) : details.optInt("runtime", 90);
+            if (type.equals("tv") && details.has("episode_run_time")) {
+                JSONArray runTimes = details.getJSONArray("episode_run_time");
+                if (runTimes.length() > 0) duration = runTimes.getInt(0);
+            }
+
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("genre", genre);
+            metadata.put("duration", duration);
+            return metadata;
+        } catch (Exception e) {
+            System.out.println("API error: " + e.getMessage());
+            return null;
+        }
+    }
 }
