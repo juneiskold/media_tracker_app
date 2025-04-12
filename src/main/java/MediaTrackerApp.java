@@ -222,4 +222,19 @@ public class MediaTrackerApp {
             System.out.println("Weekly report error: " + e.getMessage());
         }
     }
+
+    private static void viewMostWatchedGenre() {
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             Statement stmt = conn.createStatement()) {
+            String sql = "SELECT genre, COUNT(*) as count FROM media GROUP BY genre ORDER BY count DESC LIMIT 1";
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                System.out.printf("Most watched genre: %s (Watched %d times)%n", rs.getString("genre"), rs.getInt("count"));
+            } else {
+                System.out.println("No data available.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Genre report error: " + e.getMessage());
+        }
+    }
 }
