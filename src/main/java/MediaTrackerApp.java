@@ -194,4 +194,16 @@ public class MediaTrackerApp {
             System.out.println("Delete error: " + e.getMessage());
         }
     }
+
+    private static void viewReport(LocalDate date) {
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement("SELECT SUM(duration_minutes) FROM media WHERE watched_date = ?")) {
+            pstmt.setString(1, date.toString());
+            ResultSet rs = pstmt.executeQuery();
+            int total = rs.getInt(1);
+            System.out.printf("Total watched on %s: %d hour(s) %d minute(s)%n", date, total / 60, total % 60);
+        } catch (SQLException e) {
+            System.out.println("Report error: " + e.getMessage());
+        }
+    }
 }
