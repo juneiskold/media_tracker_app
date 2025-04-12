@@ -1,4 +1,5 @@
 import java.sql.*;
+import java.sql.Connection;
 import java.time.LocalDate;
 import java.util.*;
 import okhttp3.*;
@@ -40,6 +41,26 @@ public class MediaTrackerApp {
                 case 7 -> running = false;
                 default -> System.out.println("Invalid option. Try again.");
             }
+        }
+    }
+
+    private static void createDatabase() {
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             Statement stmt = conn.createStatement()) {
+
+            String sql = "CREATE TABLE IF NOT EXISTS media (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "title TEXT NOT NULL," +
+                    "type TEXT NOT NULL," +
+                    "genre TEXT," +
+                    "duration_minutes INTEGER," +
+                    "watched_date DATE" +
+                    ");";
+            stmt.execute(sql);
+
+        } catch (SQLException e) {
+            System.out.print("Database error: " + e.getMessage());
         }
     }
 }
