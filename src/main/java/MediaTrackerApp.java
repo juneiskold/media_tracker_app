@@ -24,7 +24,13 @@ public class MediaTrackerApp {
         boolean running = true;
 
         while (running) {
-            System.out.println("\n--- Media Tracker Menu ---");
+            System.out.println(ANSI_CYAN + "\n███████╗██╗   ██╗███╗   ███╗██████╗ ███████╗██╗ █████╗  █████╗ ███████╗██████╗ ");
+            System.out.println("██╔════╝██║   ██║████╗ ████║██╔══██╗██╔════╝██║██╔══██╗██╔══██╗██╔════╝██╔══██╗");
+            System.out.println("█████╗  ██║   ██║██╔████╔██║██████╔╝█████╗  ██║███████║██║  ╚═╝█████╗  ██████╔╝");
+            System.out.println("██╔══╝  ██║   ██║██║╚██╔╝██║██╔═══╝ ██╔══╝  ██║██╔══██║██║  ██╗██╔══╝  ██╔══██╗");
+            System.out.println("██║     ╚██████╔╝██║ ╚═╝ ██║██║     ███████╗██║██║  ██║╚█████╔╝███████╗██║  ██║");
+            System.out.println("╚═╝      ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚══════╝╚═╝╚═╝  ╚═╝ ╚════╝ ╚══════╝╚═╝  ╚═╝" + ANSI_RESET);
+            System.out.println(ANSI_PURPLE + "\n--- Media Tracker Menu ---" + ANSI_RESET);
             System.out.println("1. Add Media Entry");
             System.out.println("2. Update Media Entry");
             System.out.println("3. Delete Media Entry");
@@ -32,7 +38,7 @@ public class MediaTrackerApp {
             System.out.println("5. View Weekly Report");
             System.out.println("6. View Most Watched Genre");
             System.out.println("7. Exit");
-            System.out.print("Choose an option: ");
+            System.out.print(ANSI_BLUE + "Choose an option: " + ANSI_RESET);
 
             int choice = scanner.nextInt();
             scanner.nextLine();
@@ -45,7 +51,7 @@ public class MediaTrackerApp {
                 case 5 -> viewWeeklyReport();
                 case 6 -> viewMostWatchedGenre();
                 case 7 -> running = false;
-                default -> System.out.println("Invalid option. Try again.");
+                default -> System.out.println(ANSI_RED + "Invalid option. Try again." + ANSI_RESET);
             }
         }
     }
