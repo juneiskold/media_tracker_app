@@ -11,6 +11,12 @@ public class MediaTrackerApp {
     private static final String TMDB_API_KEY = "139b3b69f6805fb68bd0d5ba0ad3a0fc";
     private static final OkHttpClient client = new OkHttpClient();
 
+    private static final String ANSI_RESET = "\u001B[0m";
+    private static final String ANSI_BLUE = "\u001B[34m";
+    private static final String ANSI_CYAN = "\u001B[36m";
+    private static final String ANSI_PURPLE = "\u001B[35m";
+    private static final String ANSI_GREEN = "\u001B[32m";
+    private static final String ANSI_RED = "\u001B[31m";
 
     public static void main(String[] args) {
         createDatabase();
