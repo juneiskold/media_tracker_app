@@ -77,45 +77,111 @@ public class MediaTrackerApp {
     }
 
     private static void addMedia(Scanner scanner) {
-        System.out.print("Title: ");
+        System.out.print("Enter movie or TV show title: ");
         String title = scanner.nextLine();
-        System.out.print("Type (Movie/TV): ");
-        String type = scanner.nextLine().toLowerCase();
 
-        Map<String, Object> metadata = fetchMediaMetadata(title, type);
-        if (metadata == null) {
-            System.out.println("Could not fetch metadata. Entering manually.");
-            System.out.print("Genre: ");
-            metadata = new HashMap<>();
-            metadata.put("genre", scanner.nextLine());
-            System.out.print("Duration (minutes): ");
-            metadata.put("duration", scanner.nextInt());
-            scanner.nextLine();
-        } else {
-            System.out.println("Fetched metadata:");
-            System.out.println("Title: " + title);
-            System.out.println("Genre: " + metadata.get("genre"));
-            System.out.println("Duration: " + metadata.get("duration") + " minutes");
-            System.out.print("Do you want to save this? (yes/no): ");
-            if (!scanner.nextLine().equalsIgnoreCase("yes")) {
-                return;
-            }
+        List<JSONObject> options = searchMediaOptions(title);
+        if (options.isEmpty()) {
+            System.out.println(ANSI_RED + "No results found. Try again." + ANSI_RESET);
+            return;
         }
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "INSERT INTO media (title, type, genre, duration_minutes, watched_date) VALUES (?, ?, ?, ?, ?)")) {
-            pstmt.setString(1, title);
-            pstmt.setString(2, type);
-            pstmt.setString(3, (String) metadata.get("genre"));
-            pstmt.setInt(4, (Integer) metadata.get("duration"));
-            pstmt.setString(5, LocalDate.now().toString());
+        System.out.println(ANSI_GREEN + "\nSearch Results:" + ANSI_RESET);
+        for (int i = 0; i < options.size(); i++) {
+            JSONObject item = options.get(i);
+            String name = item.optString("title", item.optString("name", "Unknown"));
+            String type = item.getString("media_type");
+            String releaseDate = item.optString("release_date", item.optString("first_air_date", "Unknown"));
+            String posterPath = item.optString("poster_path", "");
+            String posterUrl = posterPath.isEmpty() ? "N/A" : "https://image.tmdb.org/t/p/w500" + posterPath;
+
+            System.out.printf(ANSI_CYAN + "%d. [%s] %s (%s)\n" + ANSI_RESET, i + 1, type.toUpperCase(), name, releaseDate);
+            System.out.println("   Poster: " + posterUrl);
+        }
+
+        System.out.print(ANSI_BLUE + "Select the correct option by number: " + ANSI_RESET);
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+
+        if (choice < 1 || choice > options.size()) {
+            System.out.println(ANSI_RED + "Invalid selection." + ANSI_RESET);
+            return;
+        }
+
+        JSONObject selected = options.get(choice - 1);
+        String type = selected.getString("media_type");
+        int tmdbId = selected.getInt("id");
+
+        JSONObject details = fetchDetailsById(tmdbId, type);
+        if (details == null) {
+            System.out.println(ANSI_RED + "Failed to fetch full metadata." + ANSI_RESET);
+            return;
+        }
+
+        String name = details.optString("title", details.optString("name", "Unknown"));
+        String genre = details.optJSONArray("genres").optJSONObject(0).optString("name", "Unknown");
+        int runtime = details.has("runtime") ? details.optInt("runtime") : details.optJSONArray("episode_run_time").optInt(0, 0);
+
+        LocalDate dateWatched = LocalDate.now();
+
+        try (Connection conn = DriverManager.getConnection(DB_URL)) {
+            String sql = "INSERT INTO media (title, genre, runtime, type, date_watched) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, name);
+            pstmt.setString(2, genre);
+            pstmt.setInt(3, runtime);
+            pstmt.setString(4, type.toUpperCase());
+            pstmt.setString(5, dateWatched.toString());
             pstmt.executeUpdate();
-            System.out.println("Media added.");
+
+            System.out.println(ANSI_GREEN + "Media saved successfully!" + ANSI_RESET);
         } catch (SQLException e) {
-            System.out.println("Insert error: " + e.getMessage());
+            System.out.println(ANSI_RED + "Error saving media: " + e.getMessage() + ANSI_RESET);
         }
     }
+
+    private static List<JSONObject> searchMediaOptions(String title) {
+        List<JSONObject> results = new ArrayList<>();
+        String url = "https://api.themoviedb.org/3/search/multi?query=" + title.replace(" ", "%20") + "&api_key=" + TMDB_API_KEY;
+
+        Request request = new Request.Builder().url(url).build();
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                String responseData = response.body().string();
+                JSONObject json = new JSONObject(responseData);
+                JSONArray array = json.getJSONArray("results");
+
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject item = array.getJSONObject(i);
+                    String mediaType = item.optString("media_type", "");
+                    if (mediaType.equals("movie") || mediaType.equals("tv")) {
+                        results.add(item);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(ANSI_RED + "Error during TMDb search: " + e.getMessage() + ANSI_RESET);
+        }
+
+        return results;
+    }
+
+
+    private static JSONObject fetchDetailsById(int id, String type) {
+        String url = String.format("https://api.themoviedb.org/3/%s/%d?api_key=%s", type, id, TMDB_API_KEY);
+
+        Request request = new Request.Builder().url(url).build();
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                return new JSONObject(response.body().string());
+            }
+        } catch (Exception e) {
+            System.out.println(ANSI_RED + "Error fetching details: " + e.getMessage() + ANSI_RESET);
+        }
+
+        return null;
+    }
+
 
     private static Map<String, Object> fetchMediaMetadata(String title, String type) {
         try {
