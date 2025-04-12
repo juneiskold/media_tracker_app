@@ -179,4 +179,19 @@ public class MediaTrackerApp {
             System.out.println("Update error: " + e.getMessage());
         }
     }
+
+    private static void deleteMedia(Scanner scanner) {
+        System.out.print("Enter media ID to delete: ");
+        int id = scanner.nextInt();
+        scanner.nextLine();
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement("DELETE FROM media WHERE id=?")) {
+            pstmt.setInt(1, id);
+            pstmt.executeUpdate();
+            System.out.println("Media deleted.");
+        } catch (SQLException e) {
+            System.out.println("Delete error: " + e.getMessage());
+        }
+    }
 }
