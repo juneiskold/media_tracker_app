@@ -63,4 +63,45 @@ public class MediaTrackerApp {
             System.out.print("Database error: " + e.getMessage());
         }
     }
+
+    private static void addMedia(Scanner scanner) {
+        System.out.print("Title: ");
+        String title = scanner.nextLine();
+        System.out.print("Type (Movie/TV): ");
+        String type = scanner.nextLine().toLowerCase();
+
+        Map<String, Object> metadata = fetchMediaMetadata(title, type);
+        if (metadata == null) {
+            System.out.println("Could not fetch metadata. Entering manually.");
+            System.out.print("Genre: ");
+            metadata = new HashMap<>();
+            metadata.put("genre", scanner.nextLine());
+            System.out.print("Duration (minutes): ");
+            metadata.put("duration", scanner.nextInt());
+            scanner.nextLine();
+        } else {
+            System.out.println("Fetched metadata:");
+            System.out.println("Title: " + title);
+            System.out.println("Genre: " + metadata.get("genre"));
+            System.out.println("Duration: " + metadata.get("duration") + " minutes");
+            System.out.print("Do you want to save this? (yes/no): ");
+            if (!scanner.nextLine().equalsIgnoreCase("yes")) {
+                return;
+            }
+        }
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "INSERT INTO media (title, type, genre, duration_minutes, watched_date) VALUES (?, ?, ?, ?, ?)")) {
+            pstmt.setString(1, title);
+            pstmt.setString(2, type);
+            pstmt.setString(3, (String) metadata.get("genre"));
+            pstmt.setInt(4, (Integer) metadata.get("duration"));
+            pstmt.setString(5, LocalDate.now().toString());
+            pstmt.executeUpdate();
+            System.out.println("Media added.");
+        } catch (SQLException e) {
+            System.out.println("Insert error: " + e.getMessage());
+        }
+    }
 }
