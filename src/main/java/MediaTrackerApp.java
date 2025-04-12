@@ -11,4 +11,9 @@ public class MediaTrackerApp {
     private static final OkHttpClient client = new OkHttpClient();
 
 
+    public static void main(String[] args) {
+        createDatabase();
+        Scanner scanner = new Scanner(System.in);
+        boolean running = true;
+    }
 }
