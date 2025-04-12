@@ -150,4 +150,33 @@ public class MediaTrackerApp {
             return null;
         }
     }
+
+    private static void updateMedia(Scanner scanner) {
+        System.out.print("Enter media ID to update: ");
+        int id = scanner.nextInt();
+        scanner.nextLine();
+        System.out.print("New Title: ");
+        String title = scanner.nextLine();
+        System.out.print("New Type: ");
+        String type = scanner.nextLine();
+        System.out.print("New Genre: ");
+        String genre = scanner.nextLine();
+        System.out.print("New Duration (minutes): ");
+        int duration = scanner.nextInt();
+        scanner.nextLine();
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "UPDATE media SET title=?, type=?, genre=?, duration_minutes=? WHERE id=?")) {
+            pstmt.setString(1, title);
+            pstmt.setString(2, type);
+            pstmt.setString(3, genre);
+            pstmt.setInt(4, duration);
+            pstmt.setInt(5, id);
+            pstmt.executeUpdate();
+            System.out.println("Media updated.");
+        } catch (SQLException e) {
+            System.out.println("Update error: " + e.getMessage());
+        }
+    }
 }
